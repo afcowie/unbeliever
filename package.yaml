@@ -42,6 +42,8 @@ dependencies:
  - prettyprinter-ansi-terminal
  - safe-exceptions
  - scientific
+ - snap-core
+ - snap-server
  - stm
  - template-haskell
  - terminal-size
@@ -59,6 +61,8 @@ library:
    - Core.Data.Structures
    - Core.Encoding
    - Core.Encoding.Json
+   - Core.Http
+   - Core.Http.Server
    - Core.Program
    - Core.Program.Arguments
    - Core.Program.Execute
