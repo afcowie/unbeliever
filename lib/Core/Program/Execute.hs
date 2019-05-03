@@ -72,6 +72,7 @@ module Core.Program.Execute
         {-* Concurrency -}
       , Thread
       , fork
+      , block
       , sleep
         {-* Internals -}
       , Context
@@ -85,7 +86,7 @@ module Core.Program.Execute
 import Prelude hiding (log)
 import Control.Concurrent (threadDelay)
 import Control.Concurrent.Async (Async, async, link, cancel
-    , ExceptionInLinkedThread(..), AsyncCancelled, race_)
+    , ExceptionInLinkedThread(..), AsyncCancelled, race_, wait)
 import Control.Concurrent.MVar (readMVar, putMVar, modifyMVar_)
 import Control.Concurrent.STM (atomically, check)
 import Control.Concurrent.STM.TQueue (TQueue, readTQueue, isEmptyTQueue)
@@ -432,6 +433,14 @@ fork program = do
             subProgram context program
         link a
         return (Thread a)
+
+{-|
+Block, waiting for a thread to finish.
+
+(this wraps __async__'s 'wait')
+-}
+block :: Thread α -> Program τ α
+block (Thread a) = liftIO (wait a)
 
 {-|
 Pause the current thread for the given number of seconds. For
