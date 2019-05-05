@@ -48,15 +48,21 @@ data Handler = Handler {
 A web service. It describes an endpoint which will be handled by the
 supplied action.
 -}
-data WebService a = WebService
+data WebService = WebService
     { routesFrom :: [(Rope, Handler)]
     , serverNameFrom :: Rope
     , portNumFrom :: Int
     }
--- TODO Monoid
+
+instance Semigroup WebService where
+    (<>) w1 w2 = w2 { routesFrom = routesFrom w1 <> routesFrom w2 }
+
+instance Monoid WebService where
+    mempty = emptyWebService
+    mappend = (<>)
 
 
-emptyWebService :: WebService a
+emptyWebService :: WebService
 emptyWebService = WebService
     { routesFrom = []
     , serverNameFrom = "localhost"
@@ -80,12 +86,12 @@ newtype Program τ α = Program (ReaderT (Context τ) IO α)
 {-|
 Run a web service. This will be run in its own thread.
 -}
-launchWebServer :: WebService a -> Program t (Thread ())
+launchWebServer :: WebService -> Program t (Thread ())
 launchWebServer service = fork $ do
     context <- getContext
     liftIO (launcher context service)
 
-launcher :: Context t -> WebService a -> IO ()
+launcher :: Context t -> WebService -> IO ()
 launcher context service = do
     simpleHttpServe config server
   where
