@@ -1,5 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE QuasiQuotes #-}
+{-# LANGUAGE RankNTypes #-}
 {-# OPTIONS_GHC -fno-warn-unused-imports #-}
 {-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 {-# OPTIONS_GHC -fno-warn-missing-signatures #-}
@@ -10,22 +11,30 @@ import qualified Data.ByteString.Char8 as C
 import Core.Program
 import Core.Text
 import Core.System
+import Core.Http
 
-b = intoBytes (C.pack "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789")
+import Snap.Core
 
-data Boom = Boom deriving Show
-instance Exception Boom
+
+handleHome :: MonadSnap m => m ()
+handleHome = writeBS "Bada Boom"
+
+routes :: MonadSnap m => [(Rope,m ())]
+routes =
+    [ ("hello", handleHome)
+    , ("/", handleHome)
+    ]
+
+-- TODO setup default handlers for 415 etc per the webmachine flowchart
+
+service :: WebService ()
+service = emptyWebService
 
 main :: IO ()
 main = execute $ do
     event "Processing..."
-    debugR "b" b
 
-    let x = error "No!"
-
-    write $ case x of
-        Nothing -> "Nothing!"
-
-    sleep 0.2
+    a <- launchWebServer service
+    block a
 
     write "Done"

@@ -18,6 +18,7 @@ serve resources at predictable (and usually trivial) endpoints.
 module Core.Http.Server
     ( WebService
     , emptyWebService
+    , addRouteHandler
     , launchWebServer
     ) where
 
@@ -25,10 +26,11 @@ import Control.Concurrent.STM (atomically)
 import Control.Concurrent.STM.TQueue (writeTQueue)
 import Control.Exception (evaluate)
 import qualified Data.ByteString as B
-import Snap.Core (Snap, MonadSnap, Request, Response)
-import Snap.Http.Server (simpleHttpServe, Config, ConfigLog(ConfigIoLog)
+import Snap.Core (Snap, MonadSnap, Request, getRequest, rqClientAddr
+    , Response, route, writeBS)
+import Snap.Http.Server (simpleHttpServe, Config, ConfigLog(ConfigNoLog)
     , emptyConfig, setAccessLog, setErrorLog, setBind, setPort, setHostname
-    , setDefaultTimeout)
+    , setDefaultTimeout, setVerbose)
 
 import Core.Program.Context
 import Core.Program.Execute
@@ -61,6 +63,13 @@ emptyWebService = WebService
     , portNumFrom = 58080
     }
 
+addRouteHandler :: (Rope,Handler) -> WebService a -> WebService a
+addRouteHandler pair service =
+  let
+    routes' = pair : routesFrom service
+  in
+    service { routesFrom = routes' }
+
 -- class (Monad m, MonadIO m, MonadBaseControl IO m, MonadPlus m, Functor m,
 --        Applicative m, Alternative m) => MonadSnap m where
 {-
@@ -82,8 +91,9 @@ launcher context service = do
   where
     config :: Config Snap a
     config
-        = setAccessLog (ConfigIoLog accessLogger)
-        . setErrorLog  (ConfigIoLog errorsLogger)
+        = setAccessLog ConfigNoLog
+        . setErrorLog  ConfigNoLog
+        . setVerbose False
         . setHostname (fromRope (serverNameFrom service))
         . setPort (portNumFrom service)
         . setBind "0.0.0.0"
@@ -96,19 +106,14 @@ launcher context service = do
 -- to run that monad and get the Context back out again.
 --
 
-    accessLogger :: B.ByteString -> IO ()
-    accessLogger msg = do
-        let out = outputChannelFrom context
-
-        !msg' <- evaluate msg
-        atomically (writeTQueue out (intoRope msg'))
-
-    errorsLogger :: B.ByteString -> IO ()
-    errorsLogger msg = do
-        let out = outputChannelFrom context
-
-        !msg' <- evaluate msg
-        atomically (writeTQueue out (intoRope msg'))
+    logResult :: MonadSnap m => Request -> m ()
+    logResult req =
+      let
+        client = rqClientAddr req
+        msg = intoRope client
+      in do
+        liftIO $ subProgram context $ do
+            event msg
 
     server :: Snap ()
     server = undefined :: Snap ()
