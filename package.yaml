@@ -37,6 +37,8 @@ dependencies:
  - fingertree
  - hashable
  - hourglass
+ - http-common
+ - io-streams
  - mtl
  - prettyprinter
  - prettyprinter-ansi-terminal
