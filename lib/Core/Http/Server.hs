@@ -18,7 +18,7 @@ serve resources at predictable (and usually trivial) endpoints.
 module Core.Http.Server
     ( WebService
     , emptyWebService
-    , addRouteHandler
+    , basicObjectEndpoint
     , launchWebServer
     ) where
 
@@ -32,7 +32,6 @@ import Snap.Http.Server (simpleHttpServe, Config, ConfigLog(ConfigNoLog)
     , emptyConfig, setAccessLog, setErrorLog, setBind, setPort, setHostname
     , setDefaultTimeout, setVerbose)
 
-import Core.Program.Context
 import Core.Program.Execute
 import Core.Program.Logging
 import Core.Program.Unlift
@@ -49,13 +48,13 @@ A web service. It describes an endpoint which will be handled by the
 supplied action.
 -}
 data WebService = WebService
-    { routesFrom :: [(Rope, Handler)]
+    { handlersFrom :: [(Rope,Handler ())]
     , serverNameFrom :: Rope
     , portNumFrom :: Int
     }
 
 instance Semigroup WebService where
-    (<>) w1 w2 = w2 { routesFrom = routesFrom w1 <> routesFrom w2 }
+    (<>) w1 w2 = w2 { handlersFrom = handlersFrom w1 ++ handlersFrom w2 }
 
 instance Monoid WebService where
     mempty = emptyWebService
@@ -64,24 +63,23 @@ instance Monoid WebService where
 
 emptyWebService :: WebService
 emptyWebService = WebService
-    { routesFrom = []
+    { handlersFrom = []
     , serverNameFrom = "localhost"
     , portNumFrom = 58080
     }
 
-addRouteHandler :: (Rope,Handler) -> WebService a -> WebService a
-addRouteHandler pair service =
-  let
-    routes' = pair : routesFrom service
-  in
-    service { routesFrom = routes' }
 
--- class (Monad m, MonadIO m, MonadBaseControl IO m, MonadPlus m, Functor m,
---        Applicative m, Alternative m) => MonadSnap m where
-{-
-newtype Program τ α = Program (ReaderT (Context τ) IO α)
-    deriving (Functor, Applicative, Monad, MonadIO, MonadReader (Context τ))
--}
+basicObjectEndpoint :: Rope -> [(Rope,Handler ())] -> WebService
+basicObjectEndpoint anchor pairs =
+    emptyWebService { handlersFrom = pairs'}
+  where
+    pairs' = fmap f pairs
+  
+    f (field,handler) =
+      let
+        path = anchor <> "/:identifier/" <> field
+      in
+        (fromRope path,handler)
 
 {-|
 Run a web service. This will be run in its own thread.
@@ -117,10 +115,19 @@ launcher context service = do
       let
         client = rqClientAddr req
         msg = intoRope client
+        event' = liftIO . subProgram context . event
       in do
-        liftIO $ subProgram context $ do
-            event msg
+        event' msg
 
     server :: Snap ()
-    server = undefined :: Snap ()
+    server =
+        route (handlers' service)
+      where
+        handlers' = fmap (\(path,handler) -> (fromRope path, convertHandler handler)) . handlersFrom
 
+    convertHandler :: Handler a -> Snap ()
+    convertHandler _ = do
+        req <- getRequest
+
+        writeBS "WOW!"
+        logResult req
