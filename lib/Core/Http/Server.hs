@@ -27,11 +27,13 @@ module Core.Http.Server
     , Inbound(fromInput, intoInput)
     , Outbound(fromOutput, intoOutput)
     , handle
+    , replyTextPlain
     , emptyWebService
     , basicObjectEndpoint
     , launchWebServer
     ) where
 
+import Control.Applicative ((<|>))
 import Control.Concurrent.STM (atomically)
 import Control.Concurrent.STM.TQueue (writeTQueue)
 import Control.Exception (evaluate)
@@ -41,6 +43,7 @@ import qualified Data.ByteString as B (ByteString)
 import qualified Data.ByteString.Builder as Builder
 import Data.Foldable (foldl')
 import Network.Http.Types (Request, Response)
+import Network.Http.Internal (Request(..), Response(..))
 import Snap.Core (Snap, MonadSnap, route, writeBS)
 import qualified Snap.Core as Snap (
       Request, getRequest, rqClientAddr, rqHeaders
@@ -59,7 +62,6 @@ import Core.Text.Rope
 import Core.Text.Bytes
 import Core.System.Base
 
-
 data Internal = Internal
     { requestMeta :: Request
     , requestBody :: Input
@@ -71,7 +73,7 @@ data Internal = Internal
 {-|
 An output stream.
 -}
-newtype Input = Input (InputStream B.ByteString) 
+newtype Input = Input (InputStream B.ByteString)
 
 {-|
 Reads the /entire/ input. This is often all you need when handling small
@@ -87,7 +89,8 @@ readEntire (Input i) = do
     return (intoBytes b')
 
 {-|
-An output stream.
+An output stream. This is /not/ a pure value; once data is written to it
+you can't un-send it.
 -}
 newtype Output = Output (OutputStream B.ByteString)
 
@@ -166,6 +169,62 @@ handle handler = do
     (p',o') <- liftIO (handler (q,i) (p,o))
     put internal { responseMeta = p', responseBody = o' }
 
+data ContentType
+    = TextPlain
+    | TextHtml
+    | ImageJpeg
+    | ImagePng
+    | ApplicationJson
+    | ApplicationPdf
+    | ApplicationOctetStream
+    | ContentType String
+
+instance Show ContentType where
+    show x = case x of
+        TextPlain   -> "text/plain"
+        TextHtml    -> "text/html"
+        ImageJpeg   -> "image/jpeg"
+        ImagePng    -> "image/png"
+        ApplicationJson -> "application/json"
+        ApplicationPdf  -> "application/pdf"
+        ApplicationOctetStream  -> "application/octet-stream"
+        ContentType other       -> other
+
+{-|
+Simplistic handler to set the response to be Content-Type @text/plain@ and
+then send the supplied 'Rope'. 
+-}
+replyTextPlain :: Rope -> Handler ()
+replyTextPlain text = handle f
+  where
+    f (_,_) (p,o) = do
+        let p' = setResponseHeader "Content-Type" "text/plain" p
+        sendUnto o (fromRope text)
+        return (p',o)
+
+
+setResponseHeader = undefined
+
+{-
+
+
+runHandler :: Handler α -> Snap α
+runHandler handler = do
+    request <- Snap.getRequest
+    
+    
+    runState handler initial
+
+  where
+    adaptRequest =
+      letSnap.rqHeaders 
+
+
+
+
+
+-}
+
 {-|
 A web service. It describes an endpoint which will be handled by the
 supplied action.
@@ -232,10 +291,10 @@ launcher context service = do
 -- to run that monad and get the Context back out again.
 --
 
-    logResult :: MonadSnap m => Request -> m ()
+    logResult :: MonadSnap m => Snap.Request -> m ()
     logResult req =
       let
-        client = rqClientAddr req
+        client = Snap.rqClientAddr req
         msg = intoRope client
         event' = liftIO . subProgram context . event
       in do
@@ -249,7 +308,7 @@ launcher context service = do
 
     convertHandler :: Handler a -> Snap ()
     convertHandler _ = do
-        req <- getRequest
+        req <- Snap.getRequest
 
         writeBS "WOW!"
         logResult req
