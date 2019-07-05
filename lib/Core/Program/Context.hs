@@ -6,6 +6,7 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE StandaloneDeriving #-}
 {-# LANGUAGE InstanceSigs #-}
+{-# LANGUAGE RankNTypes #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 {-# OPTIONS_HADDOCK hide #-}
 
@@ -160,8 +161,10 @@ project each with a @main@ function. So you're best off putting your
 top-level 'Program' actions in a separate modules so you can refer to them
 from test suites and example snippets.
 -}
-newtype Program τ α = Program (ReaderT (Context τ) IO α)
+newtype ProgramMonad τ α = Program (ReaderT (Context τ) IO α)
     deriving (Functor, Applicative, Monad, MonadIO, MonadReader (Context τ))
+
+type Program t a = HasCallStack => ProgramMonad t a
 
 unProgram :: Program τ α -> ReaderT (Context τ) IO α
 unProgram (Program r) = r
@@ -179,7 +182,7 @@ getContext = do
 {-|
 Run a subprogram from within a lifted @IO@ block.
 -}
-subProgram :: Context τ -> Program τ α -> IO α
+subProgram :: HasCallStack => Context τ -> Program τ α -> IO α
 subProgram context (Program r) = do
     runReaderT r context
 
@@ -193,13 +196,13 @@ subProgram context (Program r) = do
 -- asynchronous exceptions); elsewhere we will use and wrap/export
 -- **safe-exceptions**'s variants of the functions.
 --
-instance MonadThrow (Program τ) where
+instance MonadThrow (ProgramMonad τ) where
     throwM = liftIO . Safe.throw
 
 unHandler :: (ε -> Program τ α) -> (ε -> ReaderT (Context τ) IO α)
 unHandler = fmap unProgram
 
-instance MonadCatch (Program τ) where
+instance MonadCatch (ProgramMonad τ) where
     catch :: Exception ε => (Program τ) α -> (ε -> (Program τ) α) -> (Program τ) α
     catch program handler =
       let

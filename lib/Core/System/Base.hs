@@ -29,11 +29,13 @@ module Core.System.Base
     , bracket
     , catch
     , finally
+    , HasCallStack
     ) where
 
 import Control.Exception.Safe (Exception(..), SomeException, throw
     , bracket, catch, finally, impureThrow)
 import Control.Monad.IO.Class (MonadIO, liftIO)
+import GHC.Stack (HasCallStack)
 import System.IO (Handle, IOMode(..), withFile, stdin, stdout, stderr, hFlush)
 import System.IO.Unsafe (unsafePerformIO)
 

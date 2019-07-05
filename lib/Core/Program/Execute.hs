@@ -100,6 +100,7 @@ import qualified Data.ByteString as B (hPut)
 import qualified Data.ByteString.Char8 as C (singleton)
 import GHC.Conc (numCapabilities, getNumProcessors, setNumCapabilities)
 import GHC.IO.Encoding (setLocaleEncoding, utf8)
+import GHC.Stack
 import System.Exit (ExitCode(..))
 import qualified System.Posix.Process as Posix (exitImmediately)
 
@@ -113,7 +114,7 @@ import Core.Program.Signal
 import Core.Program.Arguments
 
 -- execute actual "main"
-executeAction :: Context τ -> Program τ α -> IO ()
+executeAction :: HasCallStack => Context τ -> Program τ α -> IO ()
 executeAction context program =
   let
     quit = exitSemaphoreFrom context
@@ -178,7 +179,7 @@ Embelish a program with useful behaviours. See module header
 "Core.Program.Execute" for a detailed description. Internally this function
 calls 'configure' with an appropriate default when initializing.
 -}
-execute :: Program None α -> IO ()
+execute :: HasCallStack => Program None α -> IO ()
 execute program = do
     context <- configure "" None (simple [])
     executeWith context program
@@ -188,7 +189,7 @@ Embelish a program with useful behaviours, supplying a configuration
 for command-line options & argument parsing and an initial value for
 the top-level application state, if appropriate.
 -}
-executeWith :: Context τ -> Program τ α -> IO ()
+executeWith :: HasCallStack => Context τ -> Program τ α -> IO ()
 executeWith context program = do
     -- command line +RTS -Nn -RTS value
     when (numCapabilities == 1) (getNumProcessors >>= setNumCapabilities)
