@@ -1,17 +1,36 @@
 name: unbeliever
-version: 0.9.4.0
+version: 0.10.0.1
 synopsis: Opinionated Haskell Interoperability
 description: |
   A library to help build command-line programs, both tools and
-  longer-running daemons.
-
+  longer-running daemons. Its @Program@ type provides unified ouptut &
+  logging, command-line option parsing, exception handling, and a place to
+  put top-level application state. There's also an underlying @Rope@ text
+  type built on a finger tree of UTF-8 fragments along with conveniences
+  for pretty printing and colourizing terminal output.
+  
   A description of this package, a list of features, and some background
   to its design is contained in the
   <https://github.com/oprdyn/unbeliever/blob/master/README.markdown README>
   on GitHub.
   
-  Useful starting points in the documentation are "Core.Program.Execute"
-  and "Core.Text.Rope".
+  Useful starting points in the documentation are
+  <../core-program/docs/Core-Program-Execute.html Core.Program.Execute> and
+  <../core-text/docs/Core-Text-Rope.html Core.Text.Rope>.
+  
+  An ancillary purpose of this library is to facilitate interoperability
+  between different package families and ecosystems. Having a single
+  batteries-included package (as was originally the case) made using it
+  easier, but the resulting dependency footprint was considerable and
+  growing. The code is thus now spread across several packages:
+  
+  * __core-text__
+  * __core-data__
+  * __core-program__
+  
+  with more forthcoming as we continue to add convenince and
+  interoperability wrappers around streaming, webservers, and database
+  access patterns.
 
 stability: experimental
 license: BSD3
@@ -19,75 +38,32 @@ license-file: LICENCE
 author: Andrew Cowie <andrew@operationaldynamics.com>
 maintainer: Andrew Cowie <andrew@operationaldynamics.com>
 copyright: © 2018-2019 Operational Dynamics Consulting Pty Ltd, and Others
-tested-with: GHC == 8.6.4
+tested-with: GHC == 8.6.5
 category: System
 ghc-options: -Wall -Wwarn -fwarn-tabs
 github: oprdyn/unbeliever
 
 dependencies:
- - aeson
- - async
  - base >= 4.11 && < 5
- - bytestring
- - chronologique
- - containers
- - deepseq
- - directory
- - exceptions
- - fingertree
- - hashable
- - hourglass
- - http-common
- - io-streams
- - mtl
- - prettyprinter
- - prettyprinter-ansi-terminal
- - safe-exceptions
- - scientific
- - snap-core
- - snap-server
- - stm
- - template-haskell
- - terminal-size
- - text
- - text-short
- - transformers
- - unordered-containers
- - unix
- - vector
+ - core-text >= 0.2.0.0
+ - core-data >= 0.2.0.0
+ - core-program >= 0.2.0.0
 
 library:
-  source-dirs: lib
-  exposed-modules:
-   - Core.Data
-   - Core.Data.Structures
-   - Core.Encoding
-   - Core.Encoding.Json
-   - Core.Http
-   - Core.Http.Server
-   - Core.Program
-   - Core.Program.Arguments
-   - Core.Program.Execute
-   - Core.Program.Logging
-   - Core.Program.Metadata
-   - Core.Program.Unlift
-   - Core.Text
-   - Core.Text.Bytes
-   - Core.Text.Rope
-   - Core.Text.Utilities
-   - Core.System
-   - Core.System.Base
-   - Core.System.External
+  source-dirs: core-program/lib
+  exposed-modules: []
   other-modules:
-   - Core.Text.Breaking
-   - Core.Program.Context
-   - Core.Program.Signal
+    - Core.Everything
 
 tests:
   check:
     dependencies:
+     - bytestring
+     - fingertree
      - hspec
-     - unbeliever
+     - safe-exceptions
+     - text
+     - text-short
     ghc-options: -threaded
     source-dirs:
      - tests
@@ -103,8 +79,9 @@ tests:
 benchmarks:
   performance:
     dependencies:
+     - bytestring
      - gauge
-     - unbeliever
+     - text
     ghc-options: -threaded
     source-dirs:
      - bench
