@@ -3,5 +3,6 @@ packages:
  - core-data
  - core-text
  - core-program
+ - core-webserver-snap
  - .
 allow-newer: true

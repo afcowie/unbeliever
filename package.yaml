@@ -48,6 +48,7 @@ dependencies:
  - core-text >= 0.2.0.0
  - core-data >= 0.2.0.0
  - core-program >= 0.2.0.0
+ - core-webserver-snap >= 0.0.1.0
 
 library:
   source-dirs: core-program/lib

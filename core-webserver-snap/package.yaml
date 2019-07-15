@@ -1,0 +1,51 @@
+name: core-webserver-snap
+version: 0.0.1.0
+synopsis: Opinionated Haskell Interoperability
+description: |
+  Wrapper around the Snap Framework to facilitate building simple web
+  services.
+  
+  This is part of a library intended to ease interoperability and assist in
+  building command-line programs, both tools and longer-running daemons.
+  A list of features and some background to the library's design is contained
+  in the
+  <https://github.com/oprdyn/unbeliever/blob/master/README.markdown README>
+  on GitHub.
+  
+  See "Core.Program.Execute" to get started.
+
+stability: experimental
+license: BSD3
+license-file: LICENCE
+author: Andrew Cowie <andrew@operationaldynamics.com>
+maintainer: Andrew Cowie <andrew@operationaldynamics.com>
+copyright: © 2018-2019 Operational Dynamics Consulting Pty Ltd, and Others
+tested-with: GHC == 8.6.5
+category: System
+ghc-options: -Wall -Wwarn -fwarn-tabs
+github: oprdyn/unbeliever
+
+dependencies:
+ - async
+ - base >= 4.11 && < 5
+ - bytestring
+ - mtl
+ - safe-exceptions
+ - stm
+ - template-haskell
+ - terminal-size
+ - transformers
+
+library:
+  dependencies:
+   - core-text
+   - core-data
+   - core-program
+   - http-common
+   - io-streams
+   - snap-core
+   - snap-server
+  source-dirs: lib
+  exposed-modules:
+   - Core.Http.Server
+  other-modules: []
