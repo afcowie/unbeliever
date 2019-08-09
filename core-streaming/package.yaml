@@ -1,10 +1,9 @@
-name: core-webserver-snap
+name: core-streaming
 version: 0.0.1.0
 synopsis: Opinionated Haskell Interoperability
 description: |
-  Wrapper around the Snap Framework to facilitate building simple web
-  services.
-  
+  Streaming I/O.
+
   This is part of a library intended to ease interoperability and assist in
   building command-line programs, both tools and longer-running daemons.
   A list of features and some background to the library's design is contained
@@ -12,7 +11,7 @@ description: |
   <https://github.com/oprdyn/unbeliever/blob/master/README.markdown README>
   on GitHub.
   
-  See "Core.Program.Execute" to get started.
+  See "Core.Streaming.InputOutput" to get started.
 
 stability: experimental
 license: BSD3
@@ -41,12 +40,8 @@ library:
    - core-text
    - core-data
    - core-program
-   - core-streaming
-   - http-common
    - io-streams
-   - snap-core
-   - snap-server
   source-dirs: lib
   exposed-modules:
-   - Core.Http.Server
+   - Core.Streaming.InputOutput
   other-modules: []

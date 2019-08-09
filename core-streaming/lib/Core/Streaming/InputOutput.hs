@@ -9,13 +9,20 @@
 {-# OPTIONS_HADDOCK prune #-}
 
 {-|
-Tooling to take a mapping of routes to handler functions, and expose them
-as a web service conforming to expecations of a client consuming a RESTful
-API.
+Streaming I/O is the necessary antidote to the chronic disease of laziness.
 
-Underlying frameworks give you the ability to set up a complete and highly
-customized web server, but in the general case you usually just need to
-serve resources at predictable (and usually trivial) endpoints.
+As is often the case in the Haskell ecosystem, there are numerous
+approaches to doing streaming I/O. While for some time there was
+considerable competition between the teams working on the different
+alternatives, it was fascinating to see them mostly converge on similar
+usage patterns and even share internal implementation details. Indeed, most
+libraries include a section in their documentation of how to convert from
+one streaming framework to another. This module's 'Inbound' and 'Outbound'
+typeclasses represent these conversions.
+
+Most of the streaming I/O frameworks are polymorphic in the item being
+iterated over; here we concentrate on the task of getting streams of
+/bytes/ in or out of your program
 -}
 module Core.Streaming.InputOutput
     ( Input

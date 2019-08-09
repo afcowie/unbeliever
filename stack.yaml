@@ -3,6 +3,7 @@ packages:
  - core-data
  - core-text
  - core-program
+ - core-streaming
  - core-webserver-snap
  - .
 allow-newer: true
